@@ -107,7 +107,7 @@ interface IForm {
   function Header() {
     const [searchOpen, setSearchOpen] = useState(false);
     const homeMatch = useRouteMatch("/");
-    const tvMatch = useRouteMatch("/tv");
+    const tvMatch = useRouteMatch("/Tv");
     const inputAnimation = useAnimation();
     const navAnimation = useAnimation();
     const { scrollY } = useViewportScroll();
@@ -158,8 +158,13 @@ interface IForm {
               </Link>
             </Item>
             <Item>
-              <Link to="/tv">
+              <Link to="/Tv">
                 Tv Shows {tvMatch && <Circle layoutId="circle" />}
+              </Link>
+            </Item>
+            <Item>
+              <Link to="/HELLO">
+                HELLO {tvMatch && <Circle layoutId="circle" />}
               </Link>
             </Item>
           </Items>

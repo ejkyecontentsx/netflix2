@@ -1,52 +1,40 @@
-import React from "react";
-
-import { useQuery } from "react-query";
+import React, { useState } from "react"
 import styled from "styled-components";
-import { motion, AnimatePresence, useViewportScroll } from "framer-motion";
-import { getPlayingMovies, IGetMoviesResult, getPopularMovies, getTopRatedMovies } from "../api.ts";
+import {motion, AnimatePresence, useViewportScroll} from "framer-motion"
+import { useQuery } from "react-query";
+import { getPopularMovies, getTopRatedMovies, getUpComingMovies, IGetMoviesResult } from "../api.ts";
 import { makeImagePath } from "../utils.ts";
-import { useState } from "react";
 import { useHistory, useRouteMatch } from "react-router-dom";
-import SliderRow from "../Components/SliderRow.tsx";
-const Wrapper = styled.div`
-  background: black;
-  padding-bottom: 200px;
-`;
-const Loader = styled.div`
-  height: 20vh;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-`;
-const Banner = styled.div<{ bgPhoto: string }>`
-  height: 100vh;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  padding: 60px;
-  background-image: linear-gradient(rgba(0, 0, 0, 0), rgba(0, 0, 0, 1)),
-    url(${(props) => props.bgPhoto});
-  background-size: cover;
-`;
-const Title = styled.h2`
-  font-size: 68px;
-  margin-bottom: 20px; ;
-`;
-const Overview = styled.p`
-  font-size: 30px;
-  width: 50%;
-`;
-const FirstSlider = styled.div`
+
+
+interface Iprops{
+  title : string
+}
+
+const Slider = styled.div<Iprops>`
+
   position: relative;
-  top: -100px;
+  top : ${(props) =>{ switch (props.title){
+    case "Popular" :
+      return "100px";
+    case "Top Rated" :
+      return "300px";
+    default :
+      return "500px";}}} 
 `;
 
-const FirstRowTitle = styled.div`
+const RowTitle = styled.div<Iprops>`
   position: relative;
-  top: -50px;
-  height: 100px;
+  height: 50px;
   font-size : 36px;
   margin-left : 30px;
+  top : ${(props) =>{ switch (props.title){
+    case "Popular" :
+      return "100px";
+    case "Top Rated" :
+      return "300px";
+    default :
+      return "500px";}}} 
 `
 
 const Row = styled(motion.div)`
@@ -92,6 +80,7 @@ const Overlay = styled(motion.div)`
   background-color: rgba(0, 0, 0, 0.5);
   opacity: 0;
 `;
+
 const BigMovie = styled(motion.div)`
   position: absolute;
   width: 40vw;
@@ -125,6 +114,7 @@ const BigOverview = styled.p`
   top: -80px;
   color: ${(props) => props.theme.white.lighter};
 `;
+
 
 const rowVariants = {
   hidden: {
@@ -161,28 +151,26 @@ const infoVariants = {
     },
   },
 };
+
 const offset = 6;
-function Home() {
+
+interface ISliderRow
+{
+  videoType : string
+  sliderTitle : string;
+}
+
+function SliderRow({sliderTitle, videoType}:ISliderRow)
+{
   const history = useHistory();
   const bigMovieMatch = useRouteMatch<{ movieId: string }>("/movies/:movieId");
   const { scrollY } = useViewportScroll();
+
   const { data, isLoading } = useQuery<IGetMoviesResult>(
-    ["movies", "nowPlaying"],
-    getPlayingMovies
+    [videoType, sliderTitle],
+    sliderTitle === "Popular" ? getPopularMovies : sliderTitle === "Top Rated" ? getTopRatedMovies : getUpComingMovies
   );
 
-  const { data: popularData, isLoading: isPopularLoading } = useQuery<IGetMoviesResult>(
-    ["movies", "Popular"],
-    getPopularMovies
-  );
-
-  const { data: topRatedData, isLoading: isTopRatedLoading } = useQuery<IGetMoviesResult>(
-    ["movies", "TopRated"],
-    getTopRatedMovies
-  );
-
-  const [leaving, setLeaving] = useState(false);
-  const [index, setIndex] = useState(0);
   const incraseIndex = () => {
     if (data) {
       if (leaving) return;
@@ -191,66 +179,27 @@ function Home() {
       const maxIndex = Math.floor(totalMovies / offset) - 1;
       setIndex((prev) => (prev === maxIndex ? 0 : prev + 1));
     }
-    incraseIndex2();
-    incraseIndex3();
   };
-  const toggleLeaving = () => setLeaving((prev) => !prev);
+const [leaving, setLeaving] = useState(false);
+const [index, setIndex] = useState(0);
 
+const toggleLeaving = () => setLeaving((prev) => !prev);
 
-  const [leaving2, setLeaving2] = useState(false);
-  const [index2, setIndex2] = useState(0);
-  const incraseIndex2 = () => {
-    if (popularData) {
-      if (leaving2) return;
-      toggleLeaving2();
-      const totalMovies = popularData.results.length - 1;
-      const maxIndex = Math.floor(totalMovies / offset) - 1;
-      setIndex2((prev) => (prev === maxIndex ? 0 : prev + 1));
-    }
-  };
-  const toggleLeaving2 = () => setLeaving2((prev) => !prev);
+const onBoxClicked = (movieId: number) => {
+  history.push(`/movies/${movieId}`);
+};
 
-  const [leaving3, setLeaving3] = useState(false);
-  const [index3, setIndex3] = useState(0);
-  const incraseIndex3 = () => {
-    if (topRatedData) {
-      if (leaving3) return;
-      toggleLeaving3();
-      const totalMovies = topRatedData.results.length - 1;
-      const maxIndex = Math.floor(totalMovies / offset) - 1;
-      setIndex3((prev) => (prev === maxIndex ? 0 : prev + 1));
-    }
-  };
-  const toggleLeaving3 = () => setLeaving3((prev) => !prev);
+const onOverlayClick = () => history.push("/");
 
+const clickedMovie =
+  bigMovieMatch?.params.movieId &&
+  data?.results.find((movie) => movie.id === +bigMovieMatch.params.movieId);
 
-  const onBoxClicked = (movieId: number) => {
-    history.push(`/movies/${movieId}`);
-  };
-
-  const onOverlayClick = () => history.push("/");
-
-  const clickedMovie =
-    bigMovieMatch?.params.movieId &&
-    data?.results.find((movie) => movie.id === +bigMovieMatch.params.movieId);
-
-  return (
-    <Wrapper>
-      {isLoading || isPopularLoading ? (
-        <Loader>Loading...</Loader>
-      ) : (
-        <>
-          <Banner
-            onClick={incraseIndex}
-            bgPhoto={makeImagePath(data?.results[0].backdrop_path || "")}
-          >
-            <Title>{data?.results[0].title}</Title>
-            <Overview>{data?.results[0].overview}</Overview>
-          </Banner>
-          <FirstRowTitle>
-            Now Playing
-          </FirstRowTitle>
-          <FirstSlider>
+    return <>
+      <RowTitle  onClick={incraseIndex} title = {sliderTitle}>
+            {sliderTitle}
+      </RowTitle>
+      <Slider title = {sliderTitle}>
             <AnimatePresence initial={false} onExitComplete={toggleLeaving}>
               <Row
                 variants={rowVariants}
@@ -265,7 +214,7 @@ function Home() {
                   .slice(offset * index, offset * index + offset)
                   .map((movie) => (
                     <Box
-                      layoutId={movie.id + ""}
+                      layoutId={`${sliderTitle}` + movie.id+`` }
                       key={movie.id}
                       whileHover="hover"
                       initial="normal"
@@ -281,20 +230,7 @@ function Home() {
                   ))}
               </Row>
             </AnimatePresence>
-          </FirstSlider>
-          <SliderRow sliderTitle="Popular" videoType="Movie">
-            
-          </SliderRow>
-
-          <SliderRow sliderTitle="Top Rated" videoType="Movie">
-            
-            </SliderRow>
-
-            
-          <SliderRow sliderTitle="Up Coming" videoType="Movie">
-            
-            </SliderRow>
-         
+          </Slider>
 
           <AnimatePresence>
             {bigMovieMatch ? (
@@ -306,7 +242,7 @@ function Home() {
                 />
                 <BigMovie
                   style={{ top: scrollY.get() + 100 }}
-                  layoutId={bigMovieMatch.params.movieId}
+                  layoutId={ sliderTitle + bigMovieMatch.params.movieId}
                 >
                   {clickedMovie && (
                     <>
@@ -326,9 +262,7 @@ function Home() {
               </>
             ) : null}
           </AnimatePresence>
-        </>
-      )}
-    </Wrapper>
-  );
+    </>;
 }
-export default Home;
+
+export default SliderRow;
